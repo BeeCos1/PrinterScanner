@@ -9,7 +9,7 @@ if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Adm
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host "   IT-TOOLSET BY BEECOS1 (HELPDESK EDITION)   " -ForegroundColor Yellow
 Write-Host "===============================================" -ForegroundColor Cyan
-Write-Host "1. [Scanner] - Установить/Запустить Сканер принтеров"
+Write-Host "1. [Scanner] - Запустить Сканер принтеров"
 Write-Host "2. [Cleaner] - Очистка системы (Temp, DNS, SFC, DISM)"
 Write-Host "3. [Office]  - Активация Office (Online)"
 Write-Host "0. [Exit]    - Выход"
