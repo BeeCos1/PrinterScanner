@@ -62,7 +62,7 @@ switch ($choice) {
         DISM /Online /Cleanup-Image /RestoreHealth
 
         Write-Host "[>] Проверка диска C:..." -ForegroundColor Cyan
-        chkdsk C: /scan
+        Start-Process -FilePath "chkdsk.exe" -ArgumentList "C: /scan" -Verb RunAs -Wait -NoNewWindow
 
         Write-Host "`n[+++] ОЧИСТКА ЗАВЕРШЕНА [+++]" -ForegroundColor Green
         Pause
