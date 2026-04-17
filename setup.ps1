@@ -79,3 +79,37 @@ switch ($choice) {
         return
     }
 }
+
+"4" {
+        Write-Host "[*] АНАЛИЗ ФОНОВЫХ ПРОЦЕССОВ..." -ForegroundColor Yellow
+        Write-Host "[>] Идет поиск нестандартных процессов. Пожалуйста, подождите..." -ForegroundColor Gray
+
+        # Собираем процессы (без Windows и браузеров) и красиво их оформляем
+        $suspicious = Get-Process | Where-Object {
+            $_.Path -and
+            $_.Path -notmatch "(?i)^C:\\Windows\\" -and
+            $_.Name -notmatch "(?i)chrome|firefox|msedge|opera|Taskmgr"
+        } | Select-Object Id, Name, @{Name='RAM (MB)';Expression={[math]::Round($_.WorkingSet64 / 1MB, 1)}}, Path | Sort-Object 'RAM (MB)' -Descending
+
+        if ($suspicious.Count -eq 0) {
+            Write-Host "[+] Подозрительных/сторонних активностей не найдено." -ForegroundColor Green
+            Pause
+            continue
+        }
+
+        Write-Host "[!] Открыто графическое окно выбора (Out-GridView)." -ForegroundColor Cyan
+        Write-Host "Выделите мышкой процессы, которые хотите убить, и нажмите ОК в правом нижнем углу." -ForegroundColor Cyan
+        
+        # Вызов графического окна с таблицей
+        $toKill = $suspicious | Out-GridView -Title "ВЫБЕРИТЕ ПРОЦЕССЫ ДЛЯ ЗАВЕРШЕНИЯ (Ctrl + клик для нескольких)" -PassThru
+
+        if ($toKill) {
+            foreach ($proc in $toKill) {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Write-Host "[+] Процесс $($proc.Name) (PID: $($proc.Id)) УСПЕШНО УБИТ!" -ForegroundColor Green
+            }
+        } else {
+            Write-Host "[*] Ничего не выбрано. Отмена операции." -ForegroundColor Gray
+        }
+        Pause
+    }
