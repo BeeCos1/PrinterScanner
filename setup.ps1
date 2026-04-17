@@ -12,7 +12,7 @@ Write-Host "===============================================" -ForegroundColor Cy
 Write-Host "1. [Scanner] - Запустить Сканер принтеров"
 Write-Host "2. [Cleaner] - Очистка системы (Temp, DNS, SFC, DISM)"
 Write-Host "3. [Office]  - Активация Office (Online)"
-Write-Host "4. [ProcKill]- Очистка фоновых процессов (Графическое окно)"
+Write-Host "4. [ProcKill]- поиск подозрительных фоновых процессов (Графическое окно)"
 Write-Host "0. [Exit]    - Выход"
 Write-Host "-----------------------------------------------"
 
