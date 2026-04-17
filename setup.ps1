@@ -76,44 +76,48 @@ switch ($choice) {
     }
 
   "4" {
-        Write-Host "[*] АНАЛИЗ ФОНОВЫХ ПРОЦЕССОВ..." -ForegroundColor Yellow
-        Write-Host "[>] Идет поиск нестандартных процессов. Пожалуйста, подождите..." -ForegroundColor Gray
+        while ($true) {
+            Clear-Host
+            Write-Host "[*] АНАЛИЗ ФОНОВЫХ ПРОЦЕССОВ..." -ForegroundColor Yellow
+            Write-Host "[>] Идет сбор данных. Пожалуйста, подождите..." -ForegroundColor Gray
 
-        # Список имен, под которые чаще всего маскируются вирусы
-        $fakeNames = "(?i)^(svchost|lsass|csrss|smss|wininit|services|explorer|winlogon|spoolsv)$"
+            $fakeNames = "(?i)^(svchost|lsass|csrss|smss|wininit|services|explorer|winlogon|spoolsv)$"
 
-        # Собираем процессы и добавляем колонку проверки на подделку
-        $suspicious = Get-Process | Where-Object {
-            $_.Path -and
-            $_.Path -notmatch "(?i)^C:\\Windows\\" -and
-            $_.Name -notmatch "(?i)chrome|firefox|msedge|opera|Taskmgr"
-        } | Select-Object Id, 
-            Name, 
-            @{Name='СТАТУС';Expression={if ($_.Name -match $fakeNames) { "⚠️ ФЕЙК СИСТЕМЫ!" } else { "Обычный" }}},
-            @{Name='RAM (MB)';Expression={[math]::Round($_.WorkingSet64 / 1MB, 1)}}, 
-            Path | Sort-Object 'СТАТУС' -Descending
+            $suspicious = Get-Process | Where-Object {
+                $_.Path -and
+                $_.Path -notmatch "(?i)^C:\\Windows\\" -and
+                $_.Name -notmatch "(?i)chrome|firefox|msedge|opera|Taskmgr"
+            } | Select-Object Id, 
+                Name, 
+                @{Name='СТАТУС';Expression={if ($_.Name -match $fakeNames) { "⚠️ ФЕЙК СИСТЕМЫ!" } else { "Обычный" }}},
+                @{Name='RAM (MB)';Expression={[math]::Round($_.WorkingSet64 / 1MB, 1)}}, 
+                Path | Sort-Object 'СТАТУС' -Descending
 
-        if ($suspicious.Count -eq 0) {
-            Write-Host "[+] Подозрительных/сторонних активностей не найдено." -ForegroundColor Green
-            Pause
-            return
-        }
-
-        Write-Host "[!] Открыто графическое окно выбора (Out-GridView)." -ForegroundColor Cyan
-        Write-Host "Выделите мышкой процессы, которые хотите убить, и нажмите ОК в правом нижнем углу." -ForegroundColor Cyan
-        
-        # Вызов графического окна с таблицей
-        $toKill = $suspicious | Out-GridView -Title "ВЫБЕРИТЕ ПРОЦЕССЫ ДЛЯ ЗАВЕРШЕНИЯ (Ctrl + клик для нескольких)" -PassThru
-
-        if ($toKill) {
-            foreach ($proc in $toKill) {
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                Write-Host "[+] Процесс $($proc.Name) (PID: $($proc.Id)) УСПЕШНО УБИТ!" -ForegroundColor Green
+            if ($suspicious.Count -eq 0) {
+                Write-Host "[+] Подозрительных активностей не найдено." -ForegroundColor Green
+                Pause
+                break # Выход из цикла обратно в главное меню
             }
-        } else {
-            Write-Host "[*] Ничего не выбрано. Отмена операции." -ForegroundColor Gray
+
+            # Вызов окна (теперь оно будет открываться по кругу)
+            $toKill = $suspicious | Out-GridView -Title "ВЫБЕРИТЕ ПРОЦЕССЫ -> НАЖМИТЕ 'ОК'. (Нажмите 'Отмена' для выхода в меню)" -PassThru
+
+            # Если пользователь выделил процессы и нажал ОК:
+            if ($toKill) {
+                foreach ($proc in $toKill) {
+                    Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                    Write-Host "[+] Процесс $($proc.Name) (PID: $($proc.Id)) УСПЕШНО УБИТ!" -ForegroundColor Green
+                }
+                Write-Host "[>] Обновление списка через 2 секунды..." -ForegroundColor Cyan
+                Start-Sleep -Seconds 2 # Ждем пару секунд и цикл начнется заново!
+            } 
+            # Если пользователь нажал Отмена или крестик:
+            else {
+                Write-Host "[*] Выход из сканера. Возврат в главное меню." -ForegroundColor Gray
+                Start-Sleep -Seconds 1
+                break # Ломаем цикл и возвращаемся в главное меню
+            }
         }
-        Pause
     }
     
     "0" {
