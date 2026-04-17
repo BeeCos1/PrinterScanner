@@ -75,16 +75,23 @@ switch ($choice) {
         irm https://get.activated.win | iex
     }
 
-    "4" {
+  "4" {
         Write-Host "[*] АНАЛИЗ ФОНОВЫХ ПРОЦЕССОВ..." -ForegroundColor Yellow
         Write-Host "[>] Идет поиск нестандартных процессов. Пожалуйста, подождите..." -ForegroundColor Gray
 
-        # Собираем процессы (без Windows и браузеров) и красиво их оформляем
+        # Список имен, под которые чаще всего маскируются вирусы
+        $fakeNames = "(?i)^(svchost|lsass|csrss|smss|wininit|services|explorer|winlogon|spoolsv)$"
+
+        # Собираем процессы и добавляем колонку проверки на подделку
         $suspicious = Get-Process | Where-Object {
             $_.Path -and
             $_.Path -notmatch "(?i)^C:\\Windows\\" -and
             $_.Name -notmatch "(?i)chrome|firefox|msedge|opera|Taskmgr"
-        } | Select-Object Id, Name, @{Name='RAM (MB)';Expression={[math]::Round($_.WorkingSet64 / 1MB, 1)}}, Path | Sort-Object 'RAM (MB)' -Descending
+        } | Select-Object Id, 
+            Name, 
+            @{Name='СТАТУС';Expression={if ($_.Name -match $fakeNames) { "⚠️ ФЕЙК СИСТЕМЫ!" } else { "Обычный" }}},
+            @{Name='RAM (MB)';Expression={[math]::Round($_.WorkingSet64 / 1MB, 1)}}, 
+            Path | Sort-Object 'СТАТУС' -Descending
 
         if ($suspicious.Count -eq 0) {
             Write-Host "[+] Подозрительных/сторонних активностей не найдено." -ForegroundColor Green
