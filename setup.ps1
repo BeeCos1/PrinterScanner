@@ -12,10 +12,11 @@ Write-Host "===============================================" -ForegroundColor Cy
 Write-Host "1. [Scanner] - Запустить Сканер принтеров"
 Write-Host "2. [Cleaner] - Очистка системы (Temp, DNS, SFC, DISM)"
 Write-Host "3. [Office]  - Активация Office (Online)"
+Write-Host "4. [ProcKill]- Очистка фоновых процессов (Графическое окно)"
 Write-Host "0. [Exit]    - Выход"
 Write-Host "-----------------------------------------------"
 
-$choice = Read-Host "Выберите пункт меню (0-3)"
+$choice = Read-Host "Выберите пункт меню (0-4)"
 
 switch ($choice) {
     "1" {
@@ -73,14 +74,8 @@ switch ($choice) {
         Write-Host "[!] Используется внешний скрипт activated.win" -ForegroundColor Gray
         irm https://get.activated.win | iex
     }
-    
-    "0" {
-        Write-Host "Выход..." -ForegroundColor Red
-        return
-    }
-}
 
-"4" {
+    "4" {
         Write-Host "[*] АНАЛИЗ ФОНОВЫХ ПРОЦЕССОВ..." -ForegroundColor Yellow
         Write-Host "[>] Идет поиск нестандартных процессов. Пожалуйста, подождите..." -ForegroundColor Gray
 
@@ -94,7 +89,7 @@ switch ($choice) {
         if ($suspicious.Count -eq 0) {
             Write-Host "[+] Подозрительных/сторонних активностей не найдено." -ForegroundColor Green
             Pause
-            continue
+            return
         }
 
         Write-Host "[!] Открыто графическое окно выбора (Out-GridView)." -ForegroundColor Cyan
@@ -113,3 +108,14 @@ switch ($choice) {
         }
         Pause
     }
+    
+    "0" {
+        Write-Host "Выход..." -ForegroundColor Red
+        return
+    }
+
+    Default {
+        Write-Host "Неверный выбор, попробуйте еще раз." -ForegroundColor Red
+        Pause
+    }
+}
