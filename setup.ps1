@@ -75,14 +75,16 @@ switch ($choice) {
         irm https://get.activated.win | iex
     }
 
-  "4" {
+ "4" {
         while ($true) {
             Clear-Host
             Write-Host "[*] АНАЛИЗ ФОНОВЫХ ПРОЦЕССОВ..." -ForegroundColor Yellow
             Write-Host "[>] Идет сбор данных. Пожалуйста, подождите..." -ForegroundColor Gray
 
+            # Список для поиска фейков
             $fakeNames = "(?i)^(svchost|lsass|csrss|smss|wininit|services|explorer|winlogon|spoolsv)$"
 
+            # Собираем процессы
             $suspicious = Get-Process | Where-Object {
                 $_.Path -and
                 $_.Path -notmatch "(?i)^C:\\Windows\\" -and
@@ -90,7 +92,7 @@ switch ($choice) {
             } | Select-Object Id, 
                 Name, 
                 @{Name='СТАТУС';Expression={if ($_.Name -match $fakeNames) { "⚠️ ФЕЙК СИСТЕМЫ!" } else { "Обычный" }}},
-                @{Name='RAM (MB)';Expression={[math]::Round($_.WorkingSet64 / 1MB, 1)}}, 
+                @{Name='RAM (MB)';Expression={[double]([math]::Round($_.WorkingSet64 / 1MB, 1))}}, 
                 Path | Sort-Object 'СТАТУС' -Descending
 
             if ($suspicious.Count -eq 0) {
@@ -99,17 +101,29 @@ switch ($choice) {
                 break # Выход из цикла обратно в главное меню
             }
 
-            # Вызов окна (теперь оно будет открываться по кругу)
+            # Вызов окна
             $toKill = $suspicious | Out-GridView -Title "ВЫБЕРИТЕ ПРОЦЕССЫ -> НАЖМИТЕ 'ОК'. (Нажмите 'Отмена' для выхода в меню)" -PassThru
 
             # Если пользователь выделил процессы и нажал ОК:
             if ($toKill) {
+                Write-Host "`nВы выбрали $($toKill.Count) процесс(ов). Как их завершить?" -ForegroundColor Cyan
+                Write-Host "1 - Точечно (только выбранный процесс)"
+                Write-Host "2 - С корнями (процесс + все его скрытые 'матрешки' / дочерние процессы)"
+                $killChoice = Read-Host "Ваш выбор (1 или 2)"
+
                 foreach ($proc in $toKill) {
-                    Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                    Write-Host "[+] Процесс $($proc.Name) (PID: $($proc.Id)) УСПЕШНО УБИТ!" -ForegroundColor Green
+                    if ($killChoice -eq "2") {
+                        # Выстрел из базуки: убиваем дерево процессов через taskkill
+                        taskkill.exe /F /T /PID $proc.Id *>&1 | Out-Null
+                        Write-Host "[+] Процесс $($proc.Name) (PID: $($proc.Id)) убит ВМЕСТЕ С КОРНЯМИ!" -ForegroundColor Green
+                    } else {
+                        # Снайперский выстрел: только точечный процесс
+                        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                        Write-Host "[+] Процесс $($proc.Name) (PID: $($proc.Id)) точечно убит." -ForegroundColor Green
+                    }
                 }
-                Write-Host "[>] Обновление списка через 2 секунды..." -ForegroundColor Cyan
-                Start-Sleep -Seconds 2 # Ждем пару секунд и цикл начнется заново!
+                Write-Host "[>] Обновление списка через 2 секунды..." -ForegroundColor Gray
+                Start-Sleep -Seconds 2
             } 
             # Если пользователь нажал Отмена или крестик:
             else {
