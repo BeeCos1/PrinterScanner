@@ -1,3 +1,4 @@
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Clear-Host
 # Проверка на права администратора (нужна для SFC, DISM и записи в C:\Windows)
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
