@@ -26,7 +26,7 @@ switch ($choice) {
         if (!(Test-Path $InstallDir)) { New-Item -Path $InstallDir -ItemType Directory -Force | Out-Null }
         
         $ExePath = "$InstallDir\pscan.exe"
-        $Url = "https://github.com/BeeCos1/PrinterScanner/raw/main/pscan.exe"
+        $Url = "https://cdn.jsdelivr.net/gh/BeeCos1/PrinterScanner@main/pscan.exe"
         
         Write-Host "[>] Скачивание свежей версии..." -ForegroundColor Gray
         Invoke-WebRequest -Uri $Url -OutFile $ExePath
