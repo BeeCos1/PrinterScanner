@@ -91,8 +91,7 @@ switch ($choice) {
         Write-Host "[>] Запуск DISM (восстановление хранилища)..." -ForegroundColor Cyan
         DISM /Online /Cleanup-Image /RestoreHealth
 
-        Write-Host "[>] Проверка диска C:..." -ForegroundColor Cyan
-        cmd.exe /c "chkdsk C: /scan"
+        
 
         Write-Host "`n[+++] ОЧИСТКА ЗАВЕРШЕНА [+++]" -ForegroundColor Green
         Pause
