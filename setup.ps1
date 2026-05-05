@@ -26,16 +26,38 @@ switch ($choice) {
         if (!(Test-Path $InstallDir)) { New-Item -Path $InstallDir -ItemType Directory -Force | Out-Null }
         
         $ExePath = "$InstallDir\pscan.exe"
-        $Url = "https://cdn.jsdelivr.net/gh/BeeCos1/PrinterScanner@main/pscan.exe"
+        $ZipPath = "$InstallDir\pscan.zip"
         
-        Write-Host "[>] Скачивание свежей версии..." -ForegroundColor Gray
-        Invoke-WebRequest -Uri $Url -OutFile $ExePath
+        # ВАЖНО: Залей pscan.zip на GitHub. 
+        # Можно использовать прямую ссылку GitHub или твой jsDelivr, но расширение должно быть .zip
+        $Url = "https://cdn.jsdelivr.net/gh/BeeCos1/PrinterScanner@main/pscan.zip"
+        # Альтернатива, если jsDelivr затупит: "https://raw.githubusercontent.com/BeeCos1/PrinterScanner/main/pscan.zip"
         
-        $BatPath = "C:\Windows\pscan.bat"
-        "@echo off`nstart `"`" `"$ExePath`"" | Set-Content -Path $BatPath -Force
+        Write-Host "[>] Скачивание свежей версии (через ZIP для обхода фаервола)..." -ForegroundColor Gray
+        try {
+            # Флаг -UseBasicParsing ускоряет загрузку и решает проблемы с IE-движком
+            Invoke-WebRequest -Uri $Url -OutFile $ZipPath -UseBasicParsing
+            
+            Write-Host "[>] Распаковка архива..." -ForegroundColor Gray
+            Expand-Archive -Path $ZipPath -DestinationPath $InstallDir -Force
+            
+            # Удаляем ZIP после успешной распаковки
+            Remove-Item -Path $ZipPath -Force -ErrorAction SilentlyContinue
+        } catch {
+            Write-Host "!!! Ошибка скачивания или распаковки: $($_.Exception.Message)" -ForegroundColor Red
+            Pause
+            break # или return, в зависимости от твоей структуры меню
+        }
         
-        Write-Host "[+] Готово. Запуск..." -ForegroundColor Green
-        Start-Process $ExePath
+        if (Test-Path $ExePath) {
+            $BatPath = "C:\Windows\pscan.bat"
+            "@echo off`nstart `"`" `"$ExePath`"" | Set-Content -Path $BatPath -Force
+            
+            Write-Host "[+] Готово. Запуск..." -ForegroundColor Green
+            Start-Process $ExePath
+        } else {
+            Write-Host "[-] Ошибка: Файл pscan.exe не появился в папке после распаковки." -ForegroundColor Red
+        }
     }
     
     "2" {
