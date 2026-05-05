@@ -20,7 +20,7 @@ Write-Host "-----------------------------------------------"
 $choice = Read-Host "Выберите пункт меню (0-4)"
 
 switch ($choice) {
-    "1" {
+  "1" {
         Write-Host "[*] Работа со Сканером..." -ForegroundColor Green
         $InstallDir = "C:\IT_Tools\Scanner"
         if (!(Test-Path $InstallDir)) { New-Item -Path $InstallDir -ItemType Directory -Force | Out-Null }
@@ -28,27 +28,32 @@ switch ($choice) {
         $ExePath = "$InstallDir\pscan.exe"
         $ZipPath = "$InstallDir\pscan.zip"
         
-        # ВАЖНО: Залей pscan.zip на GitHub. 
-        # Можно использовать прямую ссылку GitHub или твой jsDelivr, но расширение должно быть .zip
-        $Url = "https://cdn.jsdelivr.net/gh/BeeCos1/PrinterScanner@main/pscan.zip"
-        # Альтернатива, если jsDelivr затупит: "https://raw.githubusercontent.com/BeeCos1/PrinterScanner/main/pscan.zip"
+        # Ссылка на твой ZIP архив! Убедись, что репозиторий Public.
+        $Url = "https://raw.githubusercontent.com/BeeCos1/PrinterScanner/main/pscan.zip"
         
-        Write-Host "[>] Скачивание свежей версии (через ZIP для обхода фаервола)..." -ForegroundColor Gray
+        # Маскируем PowerShell под обычный браузер Chrome
+        $Headers = @{
+            "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        
+        Write-Host "[>] Скачивание свежей версии..." -ForegroundColor Gray
+        
         try {
-            # Флаг -UseBasicParsing ускоряет загрузку и решает проблемы с IE-движком
-            Invoke-WebRequest -Uri $Url -OutFile $ZipPath -UseBasicParsing
+            # Качаем с заголовками браузера
+            Invoke-WebRequest -Uri $Url -OutFile $ZipPath -UseBasicParsing -Headers $Headers -ErrorAction Stop
             
             Write-Host "[>] Распаковка архива..." -ForegroundColor Gray
             Expand-Archive -Path $ZipPath -DestinationPath $InstallDir -Force
-            
-            # Удаляем ZIP после успешной распаковки
             Remove-Item -Path $ZipPath -Force -ErrorAction SilentlyContinue
+            
         } catch {
-            Write-Host "!!! Ошибка скачивания или распаковки: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "!!! Ошибка скачивания: сервера отклонил запрос или нет интернета !!!" -ForegroundColor Red
+            Write-Host "Подробности: $($_.Exception.Message)" -ForegroundColor Red
             Pause
-            break # или return, в зависимости от твоей структуры меню
+            return # Выходим из пункта меню, чтобы не сыпались красные ошибки запуска
         }
         
+        # Запускаем, только если экзешник реально появился
         if (Test-Path $ExePath) {
             $BatPath = "C:\Windows\pscan.bat"
             "@echo off`nstart `"`" `"$ExePath`"" | Set-Content -Path $BatPath -Force
@@ -56,7 +61,8 @@ switch ($choice) {
             Write-Host "[+] Готово. Запуск..." -ForegroundColor Green
             Start-Process $ExePath
         } else {
-            Write-Host "[-] Ошибка: Файл pscan.exe не появился в папке после распаковки." -ForegroundColor Red
+            Write-Host "[-] Ошибка: Файл pscan.exe не найден после распаковки." -ForegroundColor Red
+            Pause
         }
     }
     
